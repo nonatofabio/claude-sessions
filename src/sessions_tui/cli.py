@@ -29,6 +29,10 @@ def main() -> None:
         "--no-active", action="store_true",
         help="Skip active session detection",
     )
+    parser.add_argument(
+        "--demo", action="store_true",
+        help="Launch with synthetic demo data (no real sessions)",
+    )
     args = parser.parse_args()
 
     from .app import SessionsTUI
@@ -38,5 +42,6 @@ def main() -> None:
         cache_path=args.cache_path,
         force_refresh=args.refresh,
         detect_active=not args.no_active,
+        demo_mode=args.demo,
     )
     app.run()

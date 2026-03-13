@@ -18,6 +18,12 @@
 
 ---
 
+<p align="center">
+  <img src="assets/demo.gif" alt="claude-sessions demo" width="100%"/>
+</p>
+
+---
+
 Ever wonder what you worked on three days ago? Or want to pick up exactly where you left off in a session from last week?
 
 **claude-sessions** scans all your Claude Code transcripts and gives you a fast, keyboard-driven terminal UI to browse, search, and jump back into any session.

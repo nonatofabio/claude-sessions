@@ -46,6 +46,7 @@ class SessionsTUI(App):
         cache_path: Path | None = None,
         force_refresh: bool = False,
         detect_active: bool = True,
+        demo_mode: bool = False,
         **kwargs,
     ) -> None:
         super().__init__(**kwargs)
@@ -53,6 +54,7 @@ class SessionsTUI(App):
         self.cache_path = cache_path or Path.home() / ".claude" / "sessions_tui_cache.json"
         self.force_refresh = force_refresh
         self.detect_active_flag = detect_active
+        self.demo_mode = demo_mode
         self._sessions: list[SessionSummary] = []
         self._sessions_by_id: dict[str, SessionSummary] = {}
 
@@ -132,6 +134,10 @@ class SessionsTUI(App):
 
     def _load_sync(self) -> list[SessionSummary]:
         """Sync function run in a thread: parse/load sessions from cache."""
+        if self.demo_mode:
+            from .demo import generate_demo_sessions
+            return generate_demo_sessions()
+
         sessions = load_or_rebuild(
             self.projects_dir, self.cache_path, self.force_refresh,
         )
