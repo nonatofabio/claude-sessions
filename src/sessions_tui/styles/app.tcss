@@ -1,0 +1,145 @@
+/* Sessions TUI — dark theme */
+
+Screen {
+    background: #0d1117;
+    color: #c9d1d9;
+    layout: vertical;
+}
+
+/* --- Top bar: search + dimension tabs --- */
+
+SearchBar {
+    height: 3;
+    dock: top;
+}
+
+#search-bar {
+    height: 3;
+    layout: horizontal;
+    padding: 0 1;
+    background: #161b22;
+    border-bottom: solid #30363d;
+}
+
+#search-input {
+    width: 1fr;
+    margin-right: 1;
+    background: #0d1117;
+    border: tall #30363d;
+    color: #c9d1d9;
+}
+
+#search-input:focus {
+    border: tall #58a6ff;
+}
+
+.dim-button {
+    min-width: 10;
+    height: 1;
+    background: #161b22;
+    color: #8b949e;
+    border: none;
+    text-style: none;
+}
+
+.dim-button:hover {
+    background: #1c2128;
+    color: #c9d1d9;
+}
+
+.dim-button.-active {
+    background: #1f6feb;
+    color: #ffffff;
+    text-style: bold;
+}
+
+/* --- Main content: two panes --- */
+
+#main-content {
+    height: 1fr;
+}
+
+/* --- Left pane: session list --- */
+
+#session-list-pane {
+    width: 40;
+    min-width: 30;
+    border-right: solid #30363d;
+    padding: 0;
+}
+
+#session-options {
+    width: 1fr;
+    height: 1fr;
+    background: #0d1117;
+    border: none;
+    padding: 0;
+}
+
+#session-options > .option-list--option-highlighted {
+    background: #1f6feb33;
+}
+
+#session-options > .option-list--option-hover {
+    background: #1c2128;
+}
+
+/* --- Right pane: detail view --- */
+
+#detail-pane {
+    width: 1fr;
+    padding: 1 2;
+    overflow-y: auto;
+    background: #0d1117;
+}
+
+.detail-title {
+    text-style: bold;
+    color: #f0f6fc;
+    margin-bottom: 1;
+}
+
+.tag-topic {
+    color: #3fb950;
+}
+
+.tag-domain {
+    color: #58a6ff;
+}
+
+.tag-tool {
+    color: #d29922;
+}
+
+.prompt-item {
+    padding: 0 1;
+    border-left: thick #30363d;
+    background: #161b22;
+}
+
+.prompt-item.-approval {
+    border-left: thick #3fb950;
+}
+
+.prompt-item.-correction {
+    border-left: thick #f85149;
+}
+
+/* --- Status bar --- */
+
+#status-bar {
+    height: 1;
+    dock: bottom;
+    background: #161b22;
+    color: #8b949e;
+    padding: 0 1;
+    border-top: solid #30363d;
+}
+
+/* --- Empty state --- */
+
+.empty-state {
+    text-align: center;
+    color: #8b949e;
+    margin-top: 8;
+}
