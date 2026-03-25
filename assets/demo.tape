@@ -11,59 +11,71 @@ Set Padding 20
 Set Theme "GitHub Dark"
 Set TypingSpeed 60ms
 
-# Launch
+# Launch in demo mode
 Type "claude-sessions --demo"
 Enter
 Sleep 3s
 
-# Navigate down through sessions
+# Navigate down — show fork graph lines appearing
 Sleep 1s
 Type "s"
-Sleep 600ms
+Sleep 500ms
 Type "s"
-Sleep 600ms
+Sleep 500ms
 Type "s"
-Sleep 600ms
+Sleep 500ms
 Type "s"
-Sleep 600ms
+Sleep 500ms
 Type "s"
-Sleep 1s
+Sleep 500ms
+Type "s"
+Sleep 500ms
+Type "s"
+Sleep 500ms
+Type "s"
+Sleep 1.5s
 
-# Collapse a group with A
+# Collapse a group
 Type "a"
 Sleep 1s
 
 # Navigate up
 Type "w"
-Sleep 500ms
+Sleep 400ms
 Type "w"
-Sleep 500ms
+Sleep 400ms
+Type "w"
+Sleep 400ms
 
-# Expand with D
+# Expand
 Type "d"
-Sleep 1s
+Sleep 1.5s
 
 # Switch to Topic dimension
 Type "2"
 Sleep 2s
 
-# Navigate
+# Navigate through topics
 Type "s"
-Sleep 500ms
+Sleep 400ms
 Type "s"
-Sleep 500ms
+Sleep 400ms
 Type "s"
-Sleep 1s
+Sleep 400ms
+Type "s"
+Sleep 1.5s
 
-# Switch to Domain dimension
+# Switch to Domain
 Type "3"
 Sleep 2s
 
-# Navigate
+# Navigate — show fork badges (↳) on forked sessions
 Type "s"
-Sleep 500ms
+Sleep 400ms
 Type "s"
-Sleep 1s
+Sleep 400ms
+Type "s"
+Sleep 1.5s
 
 # Search
 Type "/"
@@ -73,9 +85,9 @@ Sleep 1.5s
 Enter
 Sleep 1s
 
-# Navigate results
+# Navigate search results
 Type "s"
-Sleep 800ms
+Sleep 600ms
 Type "s"
 Sleep 1s
 
@@ -83,13 +95,31 @@ Sleep 1s
 Escape
 Sleep 1.5s
 
-# Switch to Date dimension
-Type "4"
+# Back to Project view — best view for fork graphs
+Type "1"
 Sleep 2s
 
-# Scroll detail pane
-Down
-Sleep 300ms
+# Navigate to show fork tree lines
+Type "s"
+Sleep 400ms
+Type "s"
+Sleep 400ms
+Type "s"
+Sleep 400ms
+Type "s"
+Sleep 400ms
+Type "s"
+Sleep 400ms
+Type "s"
+Sleep 400ms
+Type "s"
+Sleep 400ms
+Type "s"
+Sleep 400ms
+Type "s"
+Sleep 2s
+
+# Scroll detail pane with arrows
 Down
 Sleep 300ms
 Down
@@ -101,9 +131,15 @@ Sleep 300ms
 Up
 Sleep 1.5s
 
-# Back to project view
-Type "1"
+# Date dimension
+Type "4"
 Sleep 2s
+
+# Quick navigation
+Type "s"
+Sleep 400ms
+Type "s"
+Sleep 1.5s
 
 # Quit
 Type "q"
