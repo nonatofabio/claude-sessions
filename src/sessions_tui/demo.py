@@ -208,5 +208,36 @@ def generate_demo_sessions(count: int = 42) -> list[SessionSummary]:
             is_active=is_active,
         ))
 
+    # Create fork chains — ensure parent+children share the same project
+    # so the graph is visible when grouped by project.
+
+    # Helper to set up a fork relationship and match project
+    def _fork(child_idx: int, parent_idx: int) -> None:
+        sessions[child_idx].forked_from = sessions[parent_idx].session_id
+        sessions[child_idx].slug = sessions[parent_idx].slug
+        sessions[child_idx].project_short = sessions[parent_idx].project_short
+        sessions[child_idx].project_key = sessions[parent_idx].project_key
+        sessions[child_idx].project_path = sessions[parent_idx].project_path
+
+    # Chain 1: session 3 → fork 4 → fork 5 (deep chain, same project)
+    if len(sessions) > 5:
+        _fork(4, 3)
+        _fork(5, 4)
+
+    # Chain 2: session 8 → fork 9, session 8 → fork 10 (two branches)
+    if len(sessions) > 10:
+        _fork(9, 8)
+        _fork(10, 8)
+
+    # Chain 3: session 15 → fork 16
+    if len(sessions) > 16:
+        _fork(16, 15)
+
+    # Chain 4: session 20 → fork 21 → fork 22 → fork 23 (deep chain)
+    if len(sessions) > 23:
+        _fork(21, 20)
+        _fork(22, 21)
+        _fork(23, 22)
+
     sessions.sort(key=lambda s: s.ended_at, reverse=True)
     return sessions

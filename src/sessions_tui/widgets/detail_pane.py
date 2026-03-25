@@ -53,6 +53,8 @@ class DetailPane(VerticalScroll):
             lines.append(f"[#8b949e]CWD:[/]      {cwd_display}")
         if s.slug:
             lines.append(f"[#8b949e]Slug:[/]     {s.slug}")
+        if s.forked_from:
+            lines.append(f"[#d29922]Forked from:[/] {s.forked_from[:12]}...")
         lines.append("")
 
         # Stats

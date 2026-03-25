@@ -181,11 +181,13 @@ def parse_session(path: Path, project_key: str) -> SessionSummary | None:
             git_branch = gb
             break
 
-    # Extended fields: slug, cwd, version, permission_mode
+    # Extended fields: slug, cwd, version, permission_mode, forkedFrom
     slug = ""
     cwd = ""
     version = ""
     permission_mode = ""
+    forked_from = ""
+    fork_point = ""
     for e in entries:
         if not slug:
             slug = e.get("slug", "")
@@ -195,6 +197,11 @@ def parse_session(path: Path, project_key: str) -> SessionSummary | None:
             version = e.get("version", "")
         if not permission_mode:
             permission_mode = e.get("permissionMode", "")
+        if not forked_from:
+            ff = e.get("forkedFrom", {})
+            if ff:
+                forked_from = ff.get("sessionId", "")
+                fork_point = ff.get("messageUuid", "")
         if slug and cwd and version and permission_mode:
             break
 
@@ -257,6 +264,8 @@ def parse_session(path: Path, project_key: str) -> SessionSummary | None:
         git_branch=git_branch,
         correction_count=corrections,
         approval_count=approvals,
+        forked_from=forked_from,
+        fork_point=fork_point,
         slug=slug,
         cwd=cwd,
         version=version,

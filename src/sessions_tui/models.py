@@ -39,6 +39,10 @@ class SessionSummary:
     correction_count: int = 0
     approval_count: int = 0
 
+    # Fork tracking
+    forked_from: str = ""                # parent session_id (if forked)
+    fork_point: str = ""                 # message UUID where fork happened
+
     # Extended fields (beyond original session_explorer)
     slug: str = ""                       # e.g. "keen-leaping-fountain"
     cwd: str = ""                        # working directory
