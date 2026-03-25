@@ -44,7 +44,9 @@ class DetailPane(VerticalScroll):
         lines.append(f"[#8b949e]Project:[/]  {s.project_short}")
         lines.append(f"[#8b949e]Branch:[/]   {s.git_branch or 'unknown'}    [#8b949e]Model:[/] {model_short}")
         started = s.started_at[:16].replace("T", " ") if s.started_at else "?"
+        ended = s.ended_at[:16].replace("T", " ") if s.ended_at else "?"
         lines.append(f"[#8b949e]Started:[/]  {started}  ({s.duration_display})")
+        lines.append(f"[#8b949e]Last msg:[/] {ended}  ({s.last_active_display})")
         lines.append(f"[#8b949e]Mode:[/]     {s.permission_mode or 'default'}    [#8b949e]Version:[/] {s.version or '?'}")
         if s.cwd:
             cwd_display = s.cwd.replace(str(Path.home()), "~")

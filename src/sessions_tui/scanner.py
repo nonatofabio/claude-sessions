@@ -280,5 +280,5 @@ def scan_all_sessions(projects_dir: Path) -> list[SessionSummary]:
             summary = parse_session(transcript, project_key)
             if summary:
                 sessions.append(summary)
-    sessions.sort(key=lambda s: s.started_at, reverse=True)
+    sessions.sort(key=lambda s: s.ended_at, reverse=True)
     return sessions

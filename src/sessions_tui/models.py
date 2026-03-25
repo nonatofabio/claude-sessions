@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from datetime import datetime, timezone
 
 
 @dataclass
@@ -74,3 +75,25 @@ class SessionSummary:
             return f"{hours:.1f}h"
         days = hours / 24
         return f"{days:.1f}d"
+
+    @property
+    def last_active_display(self) -> str:
+        """Relative time since last message, e.g. '5m ago', '2h ago', '3d ago'."""
+        if not self.ended_at:
+            return "?"
+        try:
+            ended = datetime.fromisoformat(self.ended_at.rstrip("Z")).replace(tzinfo=timezone.utc)
+            delta = datetime.now(timezone.utc) - ended
+            secs = delta.total_seconds()
+            if secs < 60:
+                return "just now"
+            if secs < 3600:
+                return f"{int(secs // 60)}m ago"
+            if secs < 86400:
+                return f"{int(secs // 3600)}h ago"
+            days = secs / 86400
+            if days < 30:
+                return f"{int(days)}d ago"
+            return f"{int(days // 30)}mo ago"
+        except (ValueError, TypeError):
+            return "?"

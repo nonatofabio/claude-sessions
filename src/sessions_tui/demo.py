@@ -208,5 +208,5 @@ def generate_demo_sessions(count: int = 42) -> list[SessionSummary]:
             is_active=is_active,
         ))
 
-    sessions.sort(key=lambda s: s.started_at, reverse=True)
+    sessions.sort(key=lambda s: s.ended_at, reverse=True)
     return sessions

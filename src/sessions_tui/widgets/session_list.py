@@ -112,7 +112,7 @@ class SessionList(Vertical):
             option_list.add_option(Option(header_text, id=hdr_id))
 
             if not is_collapsed:
-                items_sorted = sorted(items, key=lambda s: (not s.is_active, s.started_at))
+                items_sorted = sorted(items, key=lambda s: (not s.is_active, s.ended_at), reverse=True)
                 for s in items_sorted:
                     counter += 1
                     opt_id = f"{_SES}{counter}"
@@ -122,7 +122,7 @@ class SessionList(Vertical):
                     dot = "●" if s.is_active else "○"
                     dot_style = "green" if s.is_active else "#484f58"
                     name = s.display_name[:45]
-                    meta = f"{s.project_short} · {s.duration_display}"
+                    meta = f"{s.project_short} · {s.duration_display} · {s.last_active_display}"
                     tags = " ".join(s.domains[:2]) if s.domains else ""
 
                     card = Text()

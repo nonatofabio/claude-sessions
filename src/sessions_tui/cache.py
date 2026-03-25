@@ -79,7 +79,7 @@ def load_or_rebuild(
     # Remove stale entries (files that no longer exist) is implicit —
     # we only add sessions found on disk.
 
-    sessions.sort(key=lambda s: s.started_at, reverse=True)
+    sessions.sort(key=lambda s: s.ended_at, reverse=True)
 
     # Save updated cache
     if changed > 0 or not cache_path.exists():
