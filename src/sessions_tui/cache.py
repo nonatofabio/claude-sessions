@@ -15,7 +15,7 @@ from pathlib import Path
 from .models import SessionSummary
 from .scanner import parse_session
 
-CACHE_VERSION = 1
+CACHE_VERSION = 2
 
 
 def _session_from_dict(d: dict) -> SessionSummary:
