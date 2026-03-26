@@ -69,7 +69,7 @@ Sleep 1.5s
 Type "3"
 Sleep 2s
 
-# Navigate — show fork badges (↳) on forked sessions
+# Navigate — show fork badges on forked sessions
 Type "s"
 Sleep 400ms
 Type "s"
@@ -77,17 +77,51 @@ Sleep 400ms
 Type "s"
 Sleep 1.5s
 
-# Search
+# --- Semantic search demo ---
+
+# Search: exact keyword match
 Type "/"
 Sleep 500ms
-Type "refactor"
+Type "SQL"
 Sleep 1.5s
 Enter
 Sleep 1s
 
-# Navigate search results
+# Navigate results
 Type "s"
 Sleep 600ms
+Type "s"
+Sleep 1s
+
+# Clear and try semantic search (no keyword overlap)
+Escape
+Sleep 1s
+
+# Search: semantic — "deploy" finds CI/CD, Terraform, Docker sessions
+Type "/"
+Sleep 500ms
+Type "deploy"
+Sleep 1.5s
+Enter
+Sleep 1s
+Type "s"
+Sleep 500ms
+Type "s"
+Sleep 1s
+
+# Clear and try another semantic query
+Escape
+Sleep 1s
+
+# Search: semantic — "auth" finds JWT refactoring, health check sessions
+Type "/"
+Sleep 500ms
+Type "auth problems"
+Sleep 1.5s
+Enter
+Sleep 1s
+Type "s"
+Sleep 500ms
 Type "s"
 Sleep 1s
 
