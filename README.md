@@ -34,13 +34,17 @@ Ever wonder what you worked on three days ago? Or want to pick up exactly where 
 # With uv (recommended)
 uv tool install claude-sessions
 
+# With semantic search (lightweight 29MB model, finds "auth" when you search "login")
+uv tool install "claude-sessions[semantic]"
+
 # With pip
-pip install claude-sessions
+pip install claude-sessions            # basic
+pip install "claude-sessions[semantic]" # + semantic search
 
 # From source
 git clone https://github.com/nonatofabio/claude-sessions.git
 cd claude-sessions
-uv tool install -e .
+uv tool install -e ".[semantic]"
 ```
 
 Then just:
@@ -103,9 +107,16 @@ Sessions currently running (in Terminal or IDE) show a green dot. Detection work
 - IDE lock files (`~/.claude/ide/*.lock`)
 - Process inspection (`pgrep`)
 
-### Instant search
+### Hybrid search (BM25 + semantic)
 
-Press `/`, type any keyword — filters across project name, prompts, topics, domains, git branch, and session slug. Press **Enter** to lock in the filter and navigate results, **Esc** to reset.
+Press `/` and type — results are **ranked by relevance**, not just filtered.
+
+- **BM25 keyword ranking** (always on): handles partial matches, multi-word queries, term importance weighting
+- **Semantic search** (with `[semantic]` extra): uses a tiny 29MB embedding model ([model2vec/potion-base-8M](https://huggingface.co/minishlab/potion-base-8M)) to understand meaning. Search "auth problems" and find sessions about "JWT refactoring" — no keyword overlap needed
+
+Semantic embeddings are pre-computed in the background on startup. First run downloads the model (~29MB), then it's cached locally. Search queries take <1ms.
+
+Press **Enter** to lock in the filter and navigate results, **Esc** to reset.
 
 ### Resume any session
 

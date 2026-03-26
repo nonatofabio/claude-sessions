@@ -15,6 +15,7 @@ from textual.widgets import Input, OptionList
 from .active import detect_active_sessions, match_active_to_sessions
 from .cache import load_or_rebuild
 from .models import SessionSummary
+from .search import SessionSearchIndex
 from .widgets.detail_pane import DetailPane
 from .widgets.search_bar import SearchBar
 from .widgets.session_list import SessionList, SessionSelected
@@ -47,6 +48,7 @@ class SessionsTUI(App):
         force_refresh: bool = False,
         detect_active: bool = True,
         demo_mode: bool = False,
+        search_top_k: int = 25,
         **kwargs,
     ) -> None:
         super().__init__(**kwargs)
@@ -55,8 +57,10 @@ class SessionsTUI(App):
         self.force_refresh = force_refresh
         self.detect_active_flag = detect_active
         self.demo_mode = demo_mode
+        self.search_top_k = search_top_k
         self._sessions: list[SessionSummary] = []
         self._sessions_by_id: dict[str, SessionSummary] = {}
+        self._search_index = SessionSearchIndex()
 
     def compose(self) -> ComposeResult:
         yield SearchBar()
@@ -132,41 +136,50 @@ class SessionsTUI(App):
         """Load sessions in a background thread worker."""
         self.run_worker(self._load_sync, thread=True, name="load-sessions", exclusive=True)
 
-    def _load_sync(self) -> list[SessionSummary]:
-        """Sync function run in a thread: parse/load sessions from cache."""
+    def _load_sync(self) -> tuple[list[SessionSummary], bool]:
+        """Sync function run in a thread: load sessions + warm up semantic search."""
+        import warnings
+
         if self.demo_mode:
             from .demo import generate_demo_sessions
-            return generate_demo_sessions()
+            sessions = generate_demo_sessions()
+        else:
+            sessions = load_or_rebuild(
+                self.projects_dir, self.cache_path, self.force_refresh,
+            )
+            if self.detect_active_flag:
+                active = detect_active_sessions()
+                cwd_map: dict[str, list[str]] = defaultdict(list)
+                for s in sessions:
+                    if s.cwd:
+                        cwd_map[s.cwd].append(s.session_id)
+                active_ids = match_active_to_sessions(active, cwd_map)
+                for s in sessions:
+                    s.is_active = s.session_id in active_ids
 
-        sessions = load_or_rebuild(
-            self.projects_dir, self.cache_path, self.force_refresh,
-        )
+        # Build search index + warm up semantic embeddings in the same thread
+        self._search_index.build(sessions)
+        try:
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                semantic_ok = self._search_index._ensure_semantic()
+        except Exception:
+            semantic_ok = False
 
-        if self.detect_active_flag:
-            active = detect_active_sessions()
-            cwd_map: dict[str, list[str]] = defaultdict(list)
-            for s in sessions:
-                if s.cwd:
-                    cwd_map[s.cwd].append(s.session_id)
-            active_ids = match_active_to_sessions(active, cwd_map)
-            for s in sessions:
-                s.is_active = s.session_id in active_ids
-
-        return sessions
+        return sessions, semantic_ok is True
 
     def on_worker_state_changed(self, event) -> None:
-        """Handle worker completion."""
+        """Handle load-sessions worker completion."""
         if event.worker.name != "load-sessions":
             return
         state_name = str(event.state).split(".")[-1].upper()
-        if state_name == "SUCCESS":
-            sessions = event.worker.result
-            if sessions:
-                self._sessions = sessions
-                self._sessions_by_id = {s.session_id: s for s in sessions}
-                self._update_ui()
+        if state_name == "SUCCESS" and event.worker.result:
+            sessions, semantic_ok = event.worker.result
+            self._sessions = sessions
+            self._sessions_by_id = {s.session_id: s for s in sessions}
+            self._update_ui(semantic_ok)
 
-    def _update_ui(self) -> None:
+    def _update_ui(self, semantic_ok: bool = False) -> None:
         """Push session data to all widgets."""
         session_list = self.query_one("#session-list-pane", SessionList)
         session_list.set_sessions(self._sessions)
@@ -175,14 +188,14 @@ class SessionsTUI(App):
         status = self.query_one("#status-bar", StatusBar)
         status.update_stats(len(self._sessions), active_count)
 
-        # Auto-select first session and focus the list
         if self._sessions:
             detail = self.query_one("#detail-pane", DetailPane)
             detail.show_session(self._sessions[0])
 
-        # Focus the session list so WASD works immediately
         self.query_one("#session-options", OptionList).focus()
-        self.notify(f"Loaded {len(self._sessions)} sessions", timeout=3)
+
+        sem_label = " + semantic" if semantic_ok else ""
+        self.notify(f"Loaded {len(self._sessions)} sessions{sem_label}", timeout=3)
 
     # --- Message handlers ---
 
@@ -193,13 +206,20 @@ class SessionsTUI(App):
             self.query_one("#detail-pane", DetailPane).show_session(session)
 
     def on_search_bar_search_changed(self, message: SearchBar.SearchChanged) -> None:
-        """Handle search text changes."""
+        """Handle search text changes with hybrid BM25+semantic ranking."""
         session_list = self.query_one("#session-list-pane", SessionList)
-        session_list.filter_text = message.value
-        filtered = len(session_list._filtered())
+        query = message.value.strip()
+
+        if not query:
+            session_list.set_filtered(self._sessions)
+        else:
+            results = self._search_index.search(query, top_k=self.search_top_k)
+            ranked_sessions = [s for s, score in results]
+            session_list.set_filtered(ranked_sessions)
+
         active_count = sum(1 for s in self._sessions if s.is_active)
         self.query_one("#status-bar", StatusBar).update_stats(
-            len(self._sessions), active_count, filtered,
+            len(self._sessions), active_count, len(session_list._display_sessions),
         )
 
     def on_search_bar_dimension_changed(self, message: SearchBar.DimensionChanged) -> None:
@@ -214,9 +234,8 @@ class SessionsTUI(App):
     def action_unfocus_search(self) -> None:
         """Escape — clear search, reset filter, return focus to session list."""
         self.query_one(SearchBar).clear_search()
-        # Explicitly reset the filter in case the Input.Changed event doesn't fire
         session_list = self.query_one("#session-list-pane", SessionList)
-        session_list.filter_text = ""
+        session_list.set_filtered(self._sessions)
         active_count = sum(1 for s in self._sessions if s.is_active)
         self.query_one("#status-bar", StatusBar).update_stats(
             len(self._sessions), active_count,

@@ -11,6 +11,9 @@ dependencies = [
     "textual>=1.0.0",
 ]
 
+[project.optional-dependencies]
+semantic = ["model2vec>=0.4.0"]
+
 [project.scripts]
 claude-sessions = "sessions_tui.cli:main"
 

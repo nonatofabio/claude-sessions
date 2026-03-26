@@ -110,11 +110,11 @@ class SessionList(Vertical):
     DIMENSIONS = ("project", "topic", "domain", "date", "branch")
 
     dimension: reactive[str] = reactive("project")
-    filter_text: reactive[str] = reactive("")
 
     def __init__(self, **kwargs) -> None:
         super().__init__(**kwargs)
         self._sessions: list[SessionSummary] = []
+        self._display_sessions: list[SessionSummary] = []  # filtered subset
         self._id_map: dict[str, str] = {}       # option_id -> session_id
         self._group_map: dict[str, str] = {}     # option_id -> group_label
         self._collapsed: set[str] = set()        # collapsed group labels
@@ -127,23 +127,15 @@ class SessionList(Vertical):
     def set_sessions(self, sessions: list[SessionSummary]) -> None:
         """Replace all session data and rebuild the list."""
         self._sessions = sessions
+        self._display_sessions = sessions
         self._collapsed.clear()
         self._rebuild()
 
-    def _filtered(self) -> list[SessionSummary]:
-        """Apply text filter to sessions."""
-        if not self.filter_text:
-            return self._sessions
-        q = self.filter_text.lower()
-        results = []
-        for s in self._sessions:
-            haystack = " ".join([
-                s.project_short, s.first_prompt, s.git_branch,
-                " ".join(s.topics), " ".join(s.domains), s.slug,
-            ]).lower()
-            if q in haystack:
-                results.append(s)
-        return results
+    def set_filtered(self, sessions: list[SessionSummary]) -> None:
+        """Set the display list to a filtered/ranked subset (from search)."""
+        self._display_sessions = sessions
+        self._collapsed.clear()
+        self._rebuild()
 
     def _group_sessions(self, sessions: list[SessionSummary]) -> list[tuple[str, list[SessionSummary]]]:
         """Group sessions by the current dimension."""
@@ -173,8 +165,7 @@ class SessionList(Vertical):
         self._id_map.clear()
         self._group_map.clear()
 
-        filtered = self._filtered()
-        self._grouped_data = self._group_sessions(filtered)
+        self._grouped_data = self._group_sessions(self._display_sessions)
         self._group_labels = [label for label, _ in self._grouped_data]
 
         counter = 0
@@ -284,10 +275,6 @@ class SessionList(Vertical):
     def watch_dimension(self, _old: str, _new: str) -> None:
         if self._sessions:
             self._collapsed.clear()
-            self._rebuild()
-
-    def watch_filter_text(self, _old: str, _new: str) -> None:
-        if self._sessions:
             self._rebuild()
 
     def on_option_list_option_selected(self, event: OptionList.OptionSelected) -> None:
