@@ -101,11 +101,21 @@ Each session shows:
 - **Tags**: topics, domains, and top tools used
 - **Full prompt history** with color-coded borders (green = approval, red = correction)
 
+### Cross-platform support
+
+Works on **macOS**, **Linux**, and **Windows**:
+
+| | macOS | Linux | Windows |
+|---|---|---|---|
+| **Browse & search** | Yes | Yes | Yes |
+| **Open session** | Terminal.app (AppleScript) | Auto-detects: gnome-terminal, konsole, alacritty, kitty, wezterm, xterm (or `$TERMINAL`) | Windows Terminal or cmd.exe |
+| **Active detection** | IDE locks + `pgrep` | IDE locks + `pgrep` | IDE locks + `tasklist` |
+
 ### Active session detection
 
 Sessions currently running (in Terminal or IDE) show a green dot. Detection works via:
 - IDE lock files (`~/.claude/ide/*.lock`)
-- Process inspection (`pgrep`)
+- Process inspection (`pgrep` on macOS/Linux, `tasklist` on Windows)
 
 ### Hybrid search (BM25 + semantic)
 
@@ -143,7 +153,7 @@ All extracted metadata is cached in `~/.claude/sessions_tui_cache.json` for fast
 
 - Python 3.11+
 - Claude Code (with sessions in `~/.claude/projects/`)
-- macOS Terminal.app (for the "open session" feature — uses AppleScript)
+- macOS, Linux, or Windows
 
 ## Tech stack
 
