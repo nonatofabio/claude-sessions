@@ -2,7 +2,10 @@
 
 from __future__ import annotations
 
+import os
+import shutil
 import subprocess
+import sys
 from collections import defaultdict
 from pathlib import Path
 
@@ -252,7 +255,7 @@ class SessionsTUI(App):
         self.query_one("#session-list-pane", SessionList).dimension = dim
 
     def _open_highlighted_session(self) -> None:
-        """Open the highlighted session in a new Terminal window via claude --resume."""
+        """Open the highlighted session in a new terminal window via claude --resume."""
         sl = self.query_one("#session-list-pane", SessionList)
         session_id = sl.get_highlighted_session_id()
         if not session_id:
@@ -265,25 +268,90 @@ class SessionsTUI(App):
         cwd = session.cwd or str(Path.home())
         name = session.display_name[:50]
 
-        # Build the shell command
-        cmd = f"cd {_shell_quote(cwd)} && claude --resume {session_id}"
-
-        # Open in a new Terminal.app window
-        applescript = (
-            'tell application "Terminal"\n'
-            "    activate\n"
-            f'    do script "{_applescript_escape(cmd)}"\n'
-            "end tell"
-        )
         try:
-            subprocess.run(["osascript", "-e", applescript], capture_output=True, timeout=5)
+            if sys.platform == "darwin":
+                _open_session_macos(session_id, cwd)
+            elif sys.platform == "win32":
+                _open_session_windows(session_id, cwd)
+            else:
+                _open_session_linux(session_id, cwd)
             self.notify(f"Opened: {name}", timeout=3)
         except Exception as exc:
             self.notify(f"Failed to open terminal: {exc}", severity="error", timeout=5)
 
 
+# ---------------------------------------------------------------------------
+# Platform-specific terminal launchers
+# ---------------------------------------------------------------------------
+
+def _open_session_macos(session_id: str, cwd: str) -> None:
+    """Open a session in a new Terminal.app window on macOS."""
+    cmd = f"cd {_shell_quote(cwd)} && claude --resume {session_id}"
+    applescript = (
+        'tell application "Terminal"\n'
+        "    activate\n"
+        f'    do script "{_applescript_escape(cmd)}"\n'
+        "end tell"
+    )
+    subprocess.run(["osascript", "-e", applescript], capture_output=True, timeout=5)
+
+
+def _open_session_windows(session_id: str, cwd: str) -> None:
+    """Open a session in a new terminal window on Windows."""
+    resume_cmd = f"claude --resume {session_id}"
+    if shutil.which("wt"):
+        # Windows Terminal — open new tab in the working directory
+        subprocess.Popen(["wt", "-d", cwd, "cmd", "/k", resume_cmd])
+    else:
+        # Fallback to classic cmd.exe in a new window
+        # Empty "" after 'start' is the window title (required when command is quoted)
+        subprocess.Popen(
+            ["cmd", "/c", "start", "", "cmd", "/k",
+             f"cd /d \"{cwd}\" && {resume_cmd}"],
+        )
+
+
+def _open_session_linux(session_id: str, cwd: str) -> None:
+    """Open a session in a new terminal window on Linux."""
+    shell_cmd = f"cd {_shell_quote(cwd)} && claude --resume {session_id}; exec $SHELL"
+
+    # Honour $TERMINAL env var first
+    env_terminal = os.environ.get("TERMINAL")
+    if env_terminal and shutil.which(env_terminal):
+        subprocess.Popen([env_terminal, "-e", "bash", "-c", shell_cmd])
+        return
+
+    # Try common terminal emulators in order of popularity.
+    # Each entry: (binary, [prefix args]) — "bash", "-c", shell_cmd is appended.
+    terminals: list[tuple[str, list[str]]] = [
+        ("gnome-terminal", ["gnome-terminal", "--"]),
+        ("konsole",        ["konsole", "-e"]),
+        ("xfce4-terminal", ["xfce4-terminal", "-x"]),
+        ("alacritty",      ["alacritty", "-e"]),
+        ("kitty",          ["kitty"]),
+        ("wezterm",        ["wezterm", "start", "--"]),
+        ("x-terminal-emulator", ["x-terminal-emulator", "-e"]),
+        ("xterm",          ["xterm", "-e"]),
+    ]
+
+    for binary, prefix in terminals:
+        if shutil.which(binary):
+            subprocess.Popen([*prefix, "bash", "-c", shell_cmd])
+            return
+
+    raise RuntimeError(
+        "No supported terminal emulator found. "
+        "Set $TERMINAL or install one of: "
+        "gnome-terminal, konsole, alacritty, kitty, wezterm, xterm"
+    )
+
+
+# ---------------------------------------------------------------------------
+# Shell quoting helpers
+# ---------------------------------------------------------------------------
+
 def _shell_quote(s: str) -> str:
-    """Quote a string for safe use in a shell command."""
+    """Quote a string for safe use in a POSIX shell command."""
     return "'" + s.replace("'", "'\\''") + "'"
 
 
