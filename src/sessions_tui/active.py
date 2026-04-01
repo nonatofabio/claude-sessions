@@ -142,4 +142,4 @@ def _is_pid_alive(pid: int) -> bool:
     except PermissionError:
         return True   # process exists but we lack permission to signal it
     except (OSError, SystemError):
-        return False  # process does not exist (SystemError: Python 3.9 Windows edge case)
+        return False  # process does not exist

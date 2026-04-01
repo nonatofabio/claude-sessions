@@ -307,7 +307,7 @@ def _open_session_windows(session_id: str, cwd: str) -> None:
         # Empty "" after 'start' is the window title (required when command is quoted)
         subprocess.Popen(
             ["cmd", "/c", "start", "", "cmd", "/k",
-             f"cd /d \"{cwd}\" && {resume_cmd}"],
+             f"cd /d {_win_quote(cwd)} && {resume_cmd}"],
         )
 
 
@@ -353,6 +353,20 @@ def _open_session_linux(session_id: str, cwd: str) -> None:
 def _shell_quote(s: str) -> str:
     """Quote a string for safe use in a POSIX shell command."""
     return "'" + s.replace("'", "'\\''") + "'"
+
+
+def _win_quote(s: str) -> str:
+    """Quote a string for safe use in a Windows cmd.exe command.
+
+    Wraps the string in double quotes after escaping characters that
+    have special meaning inside cmd.exe double-quoted strings.
+    """
+    # Escape existing double quotes, then the cmd.exe metacharacters
+    # that remain active even inside double quotes.
+    s = s.replace('"', '""')
+    for ch in "%!^":
+        s = s.replace(ch, f"^{ch}")
+    return f'"{s}"'
 
 
 def _applescript_escape(s: str) -> str:
