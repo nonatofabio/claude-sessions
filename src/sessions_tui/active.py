@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import os
 import subprocess
+import sys
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -31,7 +32,7 @@ def detect_active_sessions(
     claude_dir = claude_dir or Path.home() / ".claude"
     active: dict[str, ActiveSession] = {}
 
-    # Method 1: IDE lock files
+    # Method 1: IDE lock files (works on all platforms)
     ide_dir = claude_dir / "ide"
     if ide_dir.is_dir():
         for lock_file in ide_dir.glob("*.lock"):
@@ -50,7 +51,17 @@ def detect_active_sessions(
             except (json.JSONDecodeError, OSError):
                 continue
 
-    # Method 2: CLI processes
+    # Method 2: CLI processes (platform-specific)
+    if sys.platform == "win32":
+        _detect_cli_processes_windows(active)
+    else:
+        _detect_cli_processes_unix(active)
+
+    return active
+
+
+def _detect_cli_processes_unix(active: dict[str, ActiveSession]) -> None:
+    """Detect Claude CLI processes on Unix/macOS via pgrep."""
     try:
         result = subprocess.run(
             ["pgrep", "-af", "claude"],
@@ -65,17 +76,36 @@ def detect_active_sessions(
             except ValueError:
                 continue
             cmd = parts[1]
-            # Skip non-Claude processes and this grep itself
             if "claude" not in cmd.lower():
                 continue
-            # Already captured via lock file?
             if any(a.pid == pid for a in active.values()):
                 continue
             active[f"cli:{pid}"] = ActiveSession(pid=pid, ide_name="CLI")
     except (subprocess.TimeoutExpired, FileNotFoundError):
         pass
 
-    return active
+
+def _detect_cli_processes_windows(active: dict[str, ActiveSession]) -> None:
+    """Detect Claude CLI processes on Windows via tasklist."""
+    try:
+        result = subprocess.run(
+            ["tasklist", "/FO", "CSV", "/NH"],
+            capture_output=True, text=True, timeout=5,
+        )
+        for line in result.stdout.strip().splitlines():
+            if "claude" not in line.lower():
+                continue
+            # CSV format: "Image Name","PID","Session Name","Session#","Mem Usage"
+            try:
+                fields = line.strip('"').split('","')
+                pid = int(fields[1])
+            except (ValueError, IndexError):
+                continue
+            if any(a.pid == pid for a in active.values()):
+                continue
+            active[f"cli:{pid}"] = ActiveSession(pid=pid, ide_name="CLI")
+    except (subprocess.TimeoutExpired, FileNotFoundError, OSError):
+        pass
 
 
 def match_active_to_sessions(
@@ -105,9 +135,11 @@ def match_active_to_sessions(
 
 
 def _is_pid_alive(pid: int) -> bool:
-    """Check if a process with the given PID is alive."""
+    """Check if a process with the given PID is alive (cross-platform)."""
     try:
         os.kill(pid, 0)
         return True
-    except (ProcessLookupError, PermissionError):
-        return False
+    except PermissionError:
+        return True   # process exists but we lack permission to signal it
+    except (OSError, SystemError):
+        return False  # process does not exist
