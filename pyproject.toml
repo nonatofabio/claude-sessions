@@ -20,6 +20,9 @@ claude-sessions = "sessions_tui.cli:main"
 [tool.setuptools.packages.find]
 where = ["src"]
 
+[tool.setuptools.package-data]
+sessions_tui = ["styles/*.tcss"]
+
 [tool.ruff]
 target-version = "py311"
 line-length = 120
